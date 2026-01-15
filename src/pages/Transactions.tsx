@@ -173,20 +173,14 @@ export default function Transactions() {
                 id="description"
                 type="text"
                 label="Description"
-                required
-                {...register('description', {
-                  required: 'Description is required',
-                })}
+                {...register('description')}
               />
 
               <TextInput
                 id="category"
                 type="text"
                 label="Category"
-                required
-                {...register('category', {
-                  required: 'Category is required',
-                })}
+                {...register('category')}
               />
 
               <div className="grid gap-4 sm:grid-cols-2">
