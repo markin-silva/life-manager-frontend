@@ -5,6 +5,11 @@ export interface SignUpRequest {
   password_confirmation: string;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
 export interface AuthResponse {
   status: string;
   data: {
@@ -19,4 +24,6 @@ export interface AuthHeaders {
   accessToken: string;
   client: string;
   uid: string;
+  expiry?: string;
+  tokenType?: string;
 }

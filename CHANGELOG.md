@@ -6,9 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 1.1.0
+
+### Added
+
+- Login page
+
 ### 1.0.0
 
 ### Added
+
 - Primary color palette and fonts in Tailwind config.
 - Signup page.
 - Enable class-based dark mode in Tailwind config.
