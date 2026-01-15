@@ -20,16 +20,19 @@ apiClient.interceptors.request.use((config) => {
   const tokenType = localStorage.getItem('tokenType');
 
   if (accessToken && client && uid) {
-    config.headers['access-token'] = accessToken;
-    config.headers['client'] = client;
-    config.headers['uid'] = uid;
-
-    if (expiry) {
-      config.headers['expiry'] = expiry;
-    }
-
-    if (tokenType) {
-      config.headers['token-type'] = tokenType;
+    if (typeof config.headers?.set === 'function') {
+      config.headers.set('access-token', accessToken);
+      config.headers.set('client', client);
+      config.headers.set('uid', uid);
+      if (expiry) config.headers.set('expiry', expiry);
+      if (tokenType) config.headers.set('token-type', tokenType);
+    } else {
+      config.headers = config.headers || {};
+      config.headers['access-token'] = accessToken;
+      config.headers['client'] = client;
+      config.headers['uid'] = uid;
+      if (expiry) config.headers['expiry'] = expiry;
+      if (tokenType) config.headers['token-type'] = tokenType;
     }
   }
 
@@ -57,6 +60,14 @@ const storeAuthHeaders = (headers: Record<string, string | undefined>) => {
     }
   }
 };
+
+apiClient.interceptors.response.use(
+  (response) => {
+    storeAuthHeaders(response.headers as Record<string, string | undefined>);
+    return response;
+  },
+  (error) => Promise.reject(error),
+);
 
 export const authService = {
   async signup(data: SignUpRequest): Promise<AuthResponse> {

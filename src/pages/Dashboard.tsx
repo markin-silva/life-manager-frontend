@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
+import Button from '../components/Button';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -24,12 +25,9 @@ export default function Dashboard() {
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold">Life Manager</h1>
-            <button
-              onClick={handleLogout}
-              className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--text)] transition hover:bg-[var(--surface-hover)]"
-            >
+            <Button variant="outline" onClick={handleLogout}>
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </nav>
@@ -43,6 +41,11 @@ export default function Dashboard() {
           <p className="text-sm text-[var(--muted)]">
             This is your home base. Financial tracking features are coming soon.
           </p>
+          <div className="mt-6">
+            <Link to="/transactions">
+              <Button>Open transactions</Button>
+            </Link>
+          </div>
         </div>
       </main>
     </div>
