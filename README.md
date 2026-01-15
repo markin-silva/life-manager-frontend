@@ -1,73 +1,59 @@
-# React + TypeScript + Vite
+# Life Manager - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend para aplicação de gerenciamento financeiro pessoal (Life Manager). Integração com API Rails usando autenticação por token (Devise Token Auth).
 
-Currently, two official plugins are available:
+## 🎯 Objetivo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Gerenciar finanças pessoais com uma interface simples, clara e responsiva.
 
-## React Compiler
+## 🛠 Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **React 19** + TypeScript
+- **Vite** - Build tool e dev server
+- **React Router v6** - Roteamento
+- **Axios** - HTTP client com interceptadores
+- **React Hook Form** - Gerenciamento de formulários
+- **Tailwind CSS v4** - Styling
+- **ESLint + Prettier** - Code quality
 
-## Expanding the ESLint configuration
+## 🚀 Quick Start
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+```bash
+# 1. Instalar dependências
+npm install
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+# 2. Configurar variáveis de ambiente
+cp .env.example .env.local
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 3. Iniciar desenvolvimento
+npm run dev
+# Acesse http://localhost:5173
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🔐 Autenticação
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Sistema token-based usando Devise Token Auth do Rails:
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+1. User faz signup em `/signup`
+2. Backend retorna `access-token`, `client`, `uid` nos headers
+3. Frontend salva no `localStorage`
+4. Interceptador do Axios adiciona headers em toda requisição
+5. User redirecionado para `/dashboard`
+
+## 📦 Scripts
+
+```bash
+npm run dev      # Iniciar dev server (Vite HMR)
+npm run build    # Build para produção
+npm run preview  # Preview do build
+npm run lint     # ESLint
 ```
+
+## 🔗 Integração com API
+
+**Base URL:** Configurável via `VITE_API_BASE_URL` (`.env.local`)
+
+**Autenticação:** Token-based com headers:
+- `access-token`: Token JWT
+- `client`: Client ID
+- `uid`: User email
