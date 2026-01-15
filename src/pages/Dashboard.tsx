@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import Button from '../components/Button';
+import Header from '../components/Header';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -20,17 +21,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
-      {/* Simple navbar */}
-      <nav className="border-b border-[var(--border)] bg-[var(--surface)]">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Life Manager</h1>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
-          </div>
-        </div>
-      </nav>
+      <Header onLogout={handleLogout} />
 
       {/* Content */}
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">

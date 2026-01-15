@@ -6,6 +6,9 @@ import TextInput from '../components/TextInput';
 import SelectInput from '../components/SelectInput';
 import Button from '../components/Button';
 import Alert from '../components/Alert';
+import Header from '../components/Header';
+import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
 
 type TransactionFormValues = Omit<TransactionCreateRequest, 'occurred_at'> & {
   occurred_date: string;
@@ -22,6 +25,7 @@ const defaultOccurredAt = () => {
 };
 
 export default function Transactions() {
+  const navigate = useNavigate();
   const hasFetched = useRef(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,17 +115,14 @@ export default function Transactions() {
     }, 0);
   }, [transactions]);
 
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/signup');
+  };
+
   return (
     <section className="bg-gray-50 font-sans dark:bg-gray-900">
-      <header className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center text-xl font-semibold text-gray-900 dark:text-white">
-            <div className="mr-2 h-8 w-8 rounded-full bg-primary-600" />
-            Life Manager
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Transactions</div>
-        </div>
-      </header>
+      <Header onLogout={handleLogout} />
 
       <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-6xl flex-col gap-8 px-6 py-10">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -132,9 +133,6 @@ export default function Transactions() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Track your income and expenses in one place.
             </p>
-          </div>
-          <div className="rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 shadow dark:border-gray-700 dark:bg-gray-800 dark:text-white">
-            Balance: <span className={total >= 0 ? 'text-emerald-500' : 'text-red-500'}>{total.toFixed(2)}</span>
           </div>
         </header>
 
