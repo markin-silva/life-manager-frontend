@@ -8,8 +8,10 @@ import AuthLayout from '../components/AuthLayout';
 import TextInput from '../components/TextInput';
 import Button from '../components/Button';
 import Alert from '../components/Alert';
+import { useLocale } from '../contexts/LocaleContext';
 
 export default function Login() {
+  const { t } = useLocale();
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -53,14 +55,14 @@ export default function Login() {
   };
 
   return (
-    <AuthLayout title="Sign in to your account">
+    <AuthLayout title={t('auth.signInToAccount')}>
       {apiError && <Alert>{apiError}</Alert>}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
         <TextInput
           id="email"
           type="email"
-          label="Your email"
+          label={t('auth.yourEmail')}
           placeholder="name@company.com"
           required
           error={errors.email?.message}
@@ -76,7 +78,7 @@ export default function Login() {
         <TextInput
           id="password"
           type="password"
-          label="Password"
+          label={t('auth.password')}
           placeholder="••••••••"
           required
           error={errors.password?.message}
@@ -86,16 +88,16 @@ export default function Login() {
         />
 
         <Button type="submit" disabled={isLoading} fullWidth>
-          {isLoading ? 'Signing in...' : 'Sign in'}
+          {isLoading ? t('transactions.saving') : t('auth.signIn')}
         </Button>
 
         <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-          Don’t have an account?{' '}
+          {t('auth.dontHaveAccount')}{' '}
           <a
             href="/signup"
             className="font-medium text-primary-600 hover:underline dark:text-primary-500"
           >
-            Sign up
+            {t('auth.signUp')}
           </a>
         </p>
       </form>

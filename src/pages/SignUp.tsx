@@ -8,8 +8,10 @@ import AuthLayout from '../components/AuthLayout';
 import TextInput from '../components/TextInput';
 import Button from '../components/Button';
 import Alert from '../components/Alert';
+import { useLocale } from '../contexts/LocaleContext';
 
 export default function SignUp() {
+  const { t } = useLocale();
   const navigate = useNavigate();
   const [apiError, setApiError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -58,14 +60,14 @@ export default function SignUp() {
   };
 
   return (
-    <AuthLayout title="Create an account">
+    <AuthLayout title={t('auth.createAccount')}>
       {apiError && <Alert>{apiError}</Alert>}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 md:space-y-6">
         <TextInput
           id="email"
           type="email"
-          label="Your email"
+          label={t('auth.yourEmail')}
           placeholder="name@company.com"
           required
           error={errors.email?.message}
@@ -81,7 +83,7 @@ export default function SignUp() {
         <TextInput
           id="password"
           type="password"
-          label="Password"
+          label={t('auth.password')}
           placeholder="••••••••"
           required
           error={errors.password?.message}
@@ -97,7 +99,7 @@ export default function SignUp() {
         <TextInput
           id="password_confirmation"
           type="password"
-          label="Confirm password"
+          label={t('auth.confirmPassword')}
           placeholder="••••••••"
           required
           error={errors.password_confirmation?.message}
@@ -109,16 +111,16 @@ export default function SignUp() {
         />
 
         <Button type="submit" disabled={isLoading} fullWidth>
-          {isLoading ? 'Creating account...' : 'Create an account'}
+          {isLoading ? t('transactions.saving') : t('auth.createAccountButton')}
         </Button>
 
         <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-          Already have an account?{' '}
+          {t('auth.alreadyHaveAccount')}{' '}
           <a
             href="/login"
             className="font-medium text-primary-600 hover:underline dark:text-primary-500"
           >
-            Login here
+            {t('auth.loginHere')}
           </a>
         </p>
       </form>

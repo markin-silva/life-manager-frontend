@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useLocale } from '../contexts/LocaleContext';
 
 type AuthLayoutProps = {
   title: string;
@@ -6,13 +7,15 @@ type AuthLayoutProps = {
 };
 
 export default function AuthLayout({ title, children }: AuthLayoutProps) {
+  const { t } = useLocale();
+
   return (
     <section className="bg-gray-50 font-sans dark:bg-gray-900">
       <div className="flex min-h-screen flex-col items-center justify-center px-6 py-8">
         <div className="mb-6 flex w-full max-w-md items-center justify-between">
           <div className="flex items-center text-2xl font-semibold text-gray-900 dark:text-white">
             <div className="mr-2 h-8 w-8 rounded-full bg-primary-600" />
-            Life Manager
+            {t('common.appName')}
           </div>
         </div>
 

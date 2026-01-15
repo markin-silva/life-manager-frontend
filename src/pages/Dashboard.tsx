@@ -3,8 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import Button from '../components/Button';
 import Header from '../components/Header';
+import { useLocale } from '../contexts/LocaleContext';
 
 export default function Dashboard() {
+  const { t } = useLocale();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,14 +29,14 @@ export default function Dashboard() {
       <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-sm">
           <h2 className="mb-4 text-xl font-semibold">
-            Welcome to your dashboard
+            {t('dashboard.title')}
           </h2>
           <p className="text-sm text-[var(--muted)]">
-            This is your home base. Financial tracking features are coming soon.
+            {t('dashboard.body')}
           </p>
           <div className="mt-6">
             <Link to="/transactions">
-              <Button>Open transactions</Button>
+              <Button>{t('dashboard.openTransactions')}</Button>
             </Link>
           </div>
         </div>

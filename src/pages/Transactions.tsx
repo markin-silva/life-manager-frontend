@@ -9,6 +9,7 @@ import Alert from '../components/Alert';
 import Header from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
+import { useLocale } from '../contexts/LocaleContext';
 
 type TransactionFormValues = Omit<TransactionCreateRequest, 'occurred_at'> & {
   occurred_date: string;
@@ -25,6 +26,7 @@ const defaultOccurredAt = () => {
 };
 
 export default function Transactions() {
+  const { locale, t } = useLocale();
   const navigate = useNavigate();
   const hasFetched = useRef(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -108,6 +110,21 @@ export default function Transactions() {
     }
   };
 
+  const formatMoney = useMemo(() => {
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: true,
+    });
+  }, []);
+
+  const formatDateTime = useMemo(() => {
+    return new Intl.DateTimeFormat(locale, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }, [locale]);
+
   const total = useMemo(() => {
     return transactions.reduce((sum, item) => {
       const amount = Number(item.amount) || 0;
@@ -128,10 +145,10 @@ export default function Transactions() {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              Transactions
+              {t('transactions.title')}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Track your income and expenses in one place.
+              {t('transactions.subtitle')}
             </p>
           </div>
         </header>
@@ -141,7 +158,7 @@ export default function Transactions() {
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
-              New transaction
+              {t('transactions.newTransaction')}
             </h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <TextInput
@@ -149,7 +166,7 @@ export default function Transactions() {
                 type="number"
                 step="0.01"
                 min="0"
-                label="Amount"
+                label={t('transactions.amount')}
                 required
                 error={errors.amount?.message}
                 {...register('amount', {
@@ -160,11 +177,11 @@ export default function Transactions() {
 
               <SelectInput
                 id="kind"
-                label="Kind"
+                label={t('transactions.kind')}
                 required
                 options={[
-                  { value: 'expense', label: 'Expense' },
-                  { value: 'income', label: 'Income' },
+                  { value: 'expense', label: t('transactions.expense') },
+                  { value: 'income', label: t('transactions.income') },
                 ]}
                 {...register('kind')}
               />
@@ -172,14 +189,14 @@ export default function Transactions() {
               <TextInput
                 id="description"
                 type="text"
-                label="Description"
+                label={t('transactions.description')}
                 {...register('description')}
               />
 
               <TextInput
                 id="category"
                 type="text"
-                label="Category"
+                label={t('transactions.category')}
                 {...register('category')}
               />
 
@@ -187,7 +204,7 @@ export default function Transactions() {
                 <TextInput
                   id="occurred_date"
                   type="date"
-                  label="Date"
+                  label={t('transactions.date')}
                   required
                   {...register('occurred_date', {
                     required: 'Date is required',
@@ -196,7 +213,7 @@ export default function Transactions() {
                 <TextInput
                   id="occurred_time"
                   type="time"
-                  label="Time"
+                  label={t('transactions.time')}
                   required
                   {...register('occurred_time', {
                     required: 'Time is required',
@@ -205,7 +222,7 @@ export default function Transactions() {
               </div>
 
               <Button type="submit" disabled={isSubmitting} fullWidth>
-                {isSubmitting ? 'Saving...' : 'Add transaction'}
+                {isSubmitting ? t('transactions.saving') : t('transactions.addTransaction')}
               </Button>
             </form>
           </div>
@@ -213,18 +230,20 @@ export default function Transactions() {
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Recent activity
+                {t('transactions.recentActivity')}
               </h2>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {transactions.length} items
+                {transactions.length} {t('common.items')}
               </span>
             </div>
 
             {isLoading ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">Loading...</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t('common.loading')}
+              </p>
             ) : transactions.length === 0 ? (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                No transactions yet. Add your first entry on the left.
+                {t('transactions.noTransactions')}
               </p>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -236,13 +255,13 @@ export default function Transactions() {
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {transaction.category || 'Uncategorized'} •{' '}
-                        {new Date(transaction.occurred_at).toLocaleString()}
+                        {formatDateTime.format(new Date(transaction.occurred_at))}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={transaction.kind === 'income' ? 'text-emerald-500' : 'text-red-500'}>
                         {transaction.kind === 'income' ? '+' : '-'}
-                        {Number(transaction.amount).toFixed(2)}
+                        {formatMoney.format(Math.abs(Number(transaction.amount)))}
                       </span>
                       <Button
                         type="button"
@@ -250,7 +269,7 @@ export default function Transactions() {
                         className="text-xs"
                         onClick={() => handleDelete(transaction.id)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </Button>
                     </div>
                   </div>

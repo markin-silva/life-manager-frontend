@@ -18,6 +18,7 @@ apiClient.interceptors.request.use((config) => {
   const uid = localStorage.getItem('uid');
   const expiry = localStorage.getItem('expiry');
   const tokenType = localStorage.getItem('tokenType');
+  const locale = localStorage.getItem('locale') || 'en';
 
   if (accessToken && client && uid) {
     if (typeof config.headers?.set === 'function') {
@@ -34,6 +35,13 @@ apiClient.interceptors.request.use((config) => {
       if (expiry) config.headers['expiry'] = expiry;
       if (tokenType) config.headers['token-type'] = tokenType;
     }
+  }
+
+  if (typeof config.headers?.set === 'function') {
+    config.headers.set('Accept-Language', locale);
+  } else {
+    config.headers = config.headers || {};
+    config.headers['Accept-Language'] = locale;
   }
 
   return config;
