@@ -1,6 +1,7 @@
 import axios from 'axios';
 import type { AxiosInstance } from 'axios';
 import type { SignUpRequest, LoginRequest, AuthResponse, AuthHeaders } from '../types/auth';
+import { getErrorMessage } from './apiResponse';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -86,7 +87,7 @@ export const authService = {
 
       return response.data;
     } catch (error) {
-      throw error;
+      throw new Error(getErrorMessage(error));
     }
   },
 
@@ -96,7 +97,7 @@ export const authService = {
       storeAuthHeaders(response.headers as Record<string, string | undefined>);
       return response.data;
     } catch (error) {
-      throw error;
+      throw new Error(getErrorMessage(error));
     }
   },
 

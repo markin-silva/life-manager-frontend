@@ -1,30 +1,13 @@
 import apiClient from './api';
+import type { ApiResponse } from './apiResponse';
+import { getDataOrThrow, getErrorMessage, getSuccessMessage } from './apiResponse';
 import type {
   Transaction,
   TransactionCreateRequest,
   TransactionUpdateRequest,
 } from '../types/transactions';
 
-type ApiError = {
-  code: string;
-  message: string;
-  details?: Record<string, unknown>;
-};
-
-type ApiResponse<T> = {
-  status: 'success' | 'error';
-  data?: T;
-  error?: ApiError;
-};
-
-const ensureSuccess = <T>(response: ApiResponse<T>): T => {
-  if (response.status === 'success' && response.data !== undefined) {
-    return response.data;
-  }
-
-  const message = response.error?.message || 'Unexpected API error';
-  throw new Error(message);
-};
+const ensureSuccess = <T>(response: ApiResponse<T>): T => getDataOrThrow(response);
 
 const unwrapList = (data: Transaction[] | { transactions: Transaction[] }): Transaction[] => {
   if (Array.isArray(data)) {
@@ -48,46 +31,67 @@ const unwrapItem = (data: Transaction | { transaction: Transaction }): Transacti
 
 export const transactionsService = {
   async list(): Promise<Transaction[]> {
-    const response = await apiClient.get<ApiResponse<Transaction[]>>(
-      '/api/v1/transactions',
-    );
-    const data = ensureSuccess(response.data);
-    return unwrapList(data as Transaction[] | { transactions: Transaction[] });
+    try {
+      const response = await apiClient.get<ApiResponse<Transaction[]>>(
+        '/api/v1/transactions',
+      );
+      const data = ensureSuccess(response.data);
+      return unwrapList(data as Transaction[] | { transactions: Transaction[] });
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 
   async get(id: string): Promise<Transaction> {
-    const response = await apiClient.get<ApiResponse<Transaction>>(
-      `/api/v1/transactions/${id}`,
-    );
-    const data = ensureSuccess(response.data);
-    return unwrapItem(data as Transaction | { transaction: Transaction });
+    try {
+      const response = await apiClient.get<ApiResponse<Transaction>>(
+        `/api/v1/transactions/${id}`,
+      );
+      const data = ensureSuccess(response.data);
+      return unwrapItem(data as Transaction | { transaction: Transaction });
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 
-  async create(payload: TransactionCreateRequest): Promise<Transaction> {
-    const response = await apiClient.post<ApiResponse<Transaction>>(
-      '/api/v1/transactions',
-      payload,
-    );
-    const data = ensureSuccess(response.data);
-    return unwrapItem(data as Transaction | { transaction: Transaction });
+  async create(payload: TransactionCreateRequest): Promise<{ transaction: Transaction; message?: string }> {
+    try {
+      const response = await apiClient.post<ApiResponse<Transaction>>(
+        '/api/v1/transactions',
+        payload,
+      );
+      const message = getSuccessMessage(response.data);
+      const data = ensureSuccess(response.data);
+      return { transaction: unwrapItem(data as Transaction | { transaction: Transaction }), message };
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 
   async update(
     id: string,
     payload: TransactionUpdateRequest,
   ): Promise<Transaction> {
-    const response = await apiClient.put<ApiResponse<Transaction>>(
-      `/api/v1/transactions/${id}`,
-      payload,
-    );
-    const data = ensureSuccess(response.data);
-    return unwrapItem(data as Transaction | { transaction: Transaction });
+    try {
+      const response = await apiClient.put<ApiResponse<Transaction>>(
+        `/api/v1/transactions/${id}`,
+        payload,
+      );
+      const data = ensureSuccess(response.data);
+      return unwrapItem(data as Transaction | { transaction: Transaction });
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 
   async remove(id: string): Promise<void> {
-    const response = await apiClient.delete<ApiResponse<null>>(
-      `/api/v1/transactions/${id}`,
-    );
-    ensureSuccess(response.data);
+    try {
+      const response = await apiClient.delete<ApiResponse<null>>(
+        `/api/v1/transactions/${id}`,
+      );
+      ensureSuccess(response.data);
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
   },
 };

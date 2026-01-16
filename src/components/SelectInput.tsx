@@ -9,7 +9,7 @@ type SelectInputProps = SelectHTMLAttributes<HTMLSelectElement> & {
   id: string;
   label: string;
   options: SelectOption[];
-  error?: string;
+  error?: string | string[];
   required?: boolean;
 };
 
@@ -24,6 +24,8 @@ export default function SelectInput({
 }: SelectInputProps) {
   const baseClasses =
     'block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-600 focus:ring-primary-600 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-primary-500 dark:focus:ring-primary-500';
+
+  const errorMessages = Array.isArray(error) ? error : error ? [error] : [];
 
   return (
     <div>
@@ -41,7 +43,15 @@ export default function SelectInput({
           </option>
         ))}
       </select>
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {errorMessages.length > 0 && (
+        <div className="mt-1 space-y-1">
+          {errorMessages.map((message) => (
+            <p key={message} className="text-xs text-red-500">
+              {message}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

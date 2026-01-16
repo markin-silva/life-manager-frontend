@@ -5,11 +5,12 @@ import type { Transaction, TransactionCreateRequest } from '../types/transaction
 import TextInput from '../components/TextInput';
 import SelectInput from '../components/SelectInput';
 import Button from '../components/Button';
-import Alert from '../components/Alert';
 import Header from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import { useLocale } from '../contexts/LocaleContext';
+import Toast from '../components/Toast';
+import { getErrorMessage, normalizeEmptyStrings } from '../services/apiResponse';
 
 type TransactionFormValues = Omit<TransactionCreateRequest, 'occurred_at'> & {
   occurred_date: string;
@@ -26,22 +27,25 @@ const defaultOccurredAt = () => {
 };
 
 export default function Transactions() {
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const navigate = useNavigate();
   const hasFetched = useRef(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    clearErrors,
     formState: { errors },
   } = useForm<TransactionFormValues>({
     defaultValues: {
-      amount: 0,
+      amount: undefined,
       kind: 'expense',
       description: '',
       category: '',
@@ -50,19 +54,21 @@ export default function Transactions() {
     },
   });
 
+  const formValues = watch();
+
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
     const fetchTransactions = async () => {
       setIsLoading(true);
-      setError(null);
+      setFormError(null);
 
       try {
         const data = await transactionsService.list();
         setTransactions(data);
       } catch (err) {
-        setError((err as Error).message);
+        setFormError(getErrorMessage(err));
       } finally {
         setIsLoading(false);
       }
@@ -73,21 +79,24 @@ export default function Transactions() {
 
   const onSubmit = async (data: TransactionFormValues) => {
     setIsSubmitting(true);
-    setError(null);
+    setFormError(null);
 
     try {
       const occurredAt = new Date(`${data.occurred_date}T${data.occurred_time}`).toISOString();
-      const payload: TransactionCreateRequest = {
+      const payload: TransactionCreateRequest = normalizeEmptyStrings({
         ...data,
         amount: Number(data.amount),
         occurred_at: occurredAt,
-      };
+      });
 
-      const created = await transactionsService.create(payload);
-      setTransactions((prev) => [created, ...prev]);
+      const result = await transactionsService.create(payload);
+      setTransactions((prev) => [result.transaction, ...prev]);
+      const message = result.message || 'Transaction created successfully';
+      setSuccessMessage(message);
+      setTimeout(() => setSuccessMessage(null), 3000);
       const nextOccurred = defaultOccurredAt();
       reset({
-        amount: 0,
+        amount: undefined,
         kind: data.kind,
         description: '',
         category: '',
@@ -95,7 +104,8 @@ export default function Transactions() {
         occurred_time: nextOccurred.time,
       });
     } catch (err) {
-      setError((err as Error).message);
+      const message = getErrorMessage(err);
+      setFormError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +116,7 @@ export default function Transactions() {
       await transactionsService.remove(id);
       setTransactions((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
-      setError((err as Error).message);
+      setFormError(getErrorMessage(err));
     }
   };
 
@@ -119,11 +129,11 @@ export default function Transactions() {
   }, []);
 
   const formatDateTime = useMemo(() => {
-    return new Intl.DateTimeFormat(locale, {
+    return new Intl.DateTimeFormat(navigator.language, {
       dateStyle: 'medium',
       timeStyle: 'short',
     });
-  }, [locale]);
+  }, []);
 
   const total = useMemo(() => {
     return transactions.reduce((sum, item) => {
@@ -153,7 +163,25 @@ export default function Transactions() {
           </div>
         </header>
 
-        {error && <Alert>{error}</Alert>}
+        <div className="min-h-[44px]">
+          {formError && (
+            <div className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
+              <span>{formError}</span>
+              <button
+                type="button"
+                onClick={() => setFormError(null)}
+                className="text-red-600/70 transition hover:text-red-800 dark:text-red-200/70 dark:hover:text-red-100"
+                aria-label="Dismiss error"
+                title="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+        {successMessage && (
+          <Toast onClose={() => setSuccessMessage(null)}>{successMessage}</Toast>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
           <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800">
@@ -167,11 +195,18 @@ export default function Transactions() {
                 step="0.01"
                 min="0"
                 label={t('transactions.amount')}
+                placeholder="0.00"
                 required
                 error={errors.amount?.message}
+                value={formValues.amount ?? ''}
                 {...register('amount', {
-                  valueAsNumber: true,
+                  setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                  required: 'Amount is required',
                   min: { value: 0.01, message: 'Amount must be greater than 0' },
+                  onChange: () => {
+                    clearErrors('amount');
+                    setFormError(null);
+                  },
                 })}
               />
 
@@ -183,7 +218,12 @@ export default function Transactions() {
                   { value: 'expense', label: t('transactions.expense') },
                   { value: 'income', label: t('transactions.income') },
                 ]}
-                {...register('kind')}
+                {...register('kind', {
+                  onChange: () => {
+                    clearErrors('kind');
+                    setFormError(null);
+                  },
+                })}
               />
 
               <TextInput
@@ -206,8 +246,14 @@ export default function Transactions() {
                   type="date"
                   label={t('transactions.date')}
                   required
+                  value={formValues.occurred_date ?? ''}
+                  error={errors.occurred_date?.message}
                   {...register('occurred_date', {
                     required: 'Date is required',
+                    onChange: () => {
+                      clearErrors('occurred_date');
+                      setFormError(null);
+                    },
                   })}
                 />
                 <TextInput
@@ -215,8 +261,14 @@ export default function Transactions() {
                   type="time"
                   label={t('transactions.time')}
                   required
+                  value={formValues.occurred_time ?? ''}
+                  error={errors.occurred_time?.message}
                   {...register('occurred_time', {
                     required: 'Time is required',
+                    onChange: () => {
+                      clearErrors('occurred_time');
+                      setFormError(null);
+                    },
                   })}
                 />
               </div>

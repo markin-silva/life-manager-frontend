@@ -3,7 +3,7 @@ import type { InputHTMLAttributes } from 'react';
 type TextInputProps = InputHTMLAttributes<HTMLInputElement> & {
   id: string;
   label: string;
-  error?: string;
+  error?: string | string[];
   required?: boolean;
 };
 
@@ -21,6 +21,8 @@ export default function TextInput({
     ? 'border-red-300 dark:border-red-500'
     : 'border-gray-300';
 
+  const errorMessages = Array.isArray(error) ? error : error ? [error] : [];
+
   return (
     <div>
       <label
@@ -31,7 +33,15 @@ export default function TextInput({
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
       <input id={id} {...props} className={`${baseClasses} ${borderClasses} ${className}`} />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {errorMessages.length > 0 && (
+        <div className="mt-1 space-y-1">
+          {errorMessages.map((message) => (
+            <p key={message} className="text-xs text-red-500">
+              {message}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

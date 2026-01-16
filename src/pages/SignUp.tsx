@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { authService } from '../services/api';
 import type { SignUpRequest } from '../types/auth';
-import type { AxiosError } from 'axios';
 import AuthLayout from '../components/AuthLayout';
 import TextInput from '../components/TextInput';
 import Button from '../components/Button';
@@ -39,21 +38,7 @@ export default function SignUp() {
       await authService.signup(data);
       navigate('/dashboard');
     } catch (error) {
-      const axiosError = error as AxiosError<Record<string, unknown>>;
-      
-      if (axiosError.response?.data?.errors) {
-        // Handle Rails validation errors
-        const errors = axiosError.response.data.errors;
-        const errorMessage = Array.isArray(errors)
-          ? errors[0]
-          : Object.values(errors).flat()[0];
-        
-        setApiError(String(errorMessage) || 'Failed to create account');
-      } else if (axiosError.message) {
-        setApiError(axiosError.message);
-      } else {
-        setApiError('Unexpected error. Please try again.');
-      }
+      setApiError((error as Error).message);
     } finally {
       setIsLoading(false);
     }
