@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 1.6.0
+
+### Added
+
+- Category entity support with API-backed list/create/update/delete flows.
+- Category selection UI with icon/color badges and create/manage modals.
+- Category i18n mapping for system keys and custom label fallback.
+- Lucide icons for transactions and categories.
+
 ### 1.5.0
 
 ### Added
