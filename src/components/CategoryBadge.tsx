@@ -70,7 +70,6 @@ export default function CategoryBadge({ category, label, className = '' }: Categ
 
   return (
     <span className={`inline-flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 ${className}`}>
-      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} aria-hidden="true" />
       <Icon className="h-3.5 w-3.5" style={{ color }} aria-hidden="true" />
       <span className="truncate">{label}</span>
     </span>

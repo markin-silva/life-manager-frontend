@@ -23,6 +23,8 @@ type Translations = {
     loginHere: string;
     dontHaveAccount: string;
     signUp: string;
+    signingIn: string;
+    creatingAccount: string;
   };
   dashboard: {
     title: string;
@@ -36,6 +38,7 @@ type Translations = {
     recentActivity: string;
     noTransactions: string;
     amount: string;
+    actions: string;
     kind: string;
     description: string;
     category: string;
@@ -48,9 +51,17 @@ type Translations = {
     categoryIcon: string;
     saveCategory: string;
     savingCategory: string;
+    savingTransaction: string;
     editCategory: string;
     deleteCategory: string;
+    deleteTransactionTooltip: string;
+    deleteCategoryTooltip: string;
     systemCategory: string;
+    currency: string;
+    pageLabel: string;
+    pageOf: string;
+    previousPage: string;
+    nextPage: string;
     date: string;
     time: string;
     addTransaction: string;
@@ -85,6 +96,8 @@ export const translations: Record<Locale, Translations> = {
       loginHere: 'Login here',
       dontHaveAccount: "Don’t have an account?",
       signUp: 'Sign up',
+      signingIn: 'Signing in...',
+      creatingAccount: 'Creating account...',
     },
     dashboard: {
       title: 'Welcome to your dashboard',
@@ -98,6 +111,7 @@ export const translations: Record<Locale, Translations> = {
       recentActivity: 'Recent activity',
       noTransactions: 'No transactions yet. Add your first entry with the button above.',
       amount: 'Amount',
+      actions: 'Actions',
       kind: 'Kind',
       description: 'Description',
       category: 'Category',
@@ -110,9 +124,17 @@ export const translations: Record<Locale, Translations> = {
       categoryIcon: 'Icon',
       saveCategory: 'Save category',
       savingCategory: 'Saving category...',
+      savingTransaction: 'Saving transaction...',
       editCategory: 'Edit',
       deleteCategory: 'Delete',
+      deleteTransactionTooltip: 'Delete transaction',
+      deleteCategoryTooltip: 'Delete category',
       systemCategory: 'System',
+      currency: 'Currency',
+      pageLabel: 'Page',
+      pageOf: 'of',
+      previousPage: 'Previous',
+      nextPage: 'Next',
       date: 'Date',
       time: 'Time',
       addTransaction: 'Add transaction',
@@ -164,6 +186,8 @@ export const translations: Record<Locale, Translations> = {
       loginHere: 'Fazer login',
       dontHaveAccount: 'Não tem uma conta?',
       signUp: 'Criar conta',
+      signingIn: 'Entrando...',
+      creatingAccount: 'Criando conta...',
     },
     dashboard: {
       title: 'Bem-vindo ao seu dashboard',
@@ -177,6 +201,7 @@ export const translations: Record<Locale, Translations> = {
       recentActivity: 'Atividade recente',
       noTransactions: 'Nenhuma transação ainda. Adicione a primeira pelo botão acima.',
       amount: 'Valor',
+      actions: 'Ações',
       kind: 'Tipo',
       description: 'Descrição',
       category: 'Categoria',
@@ -189,9 +214,17 @@ export const translations: Record<Locale, Translations> = {
       categoryIcon: 'Ícone',
       saveCategory: 'Salvar categoria',
       savingCategory: 'Salvando categoria...',
+      savingTransaction: 'Salvando transação...',
       editCategory: 'Editar',
       deleteCategory: 'Excluir',
+      deleteTransactionTooltip: 'Excluir transação',
+      deleteCategoryTooltip: 'Excluir categoria',
       systemCategory: 'Sistema',
+      currency: 'Moeda',
+      pageLabel: 'Página',
+      pageOf: 'de',
+      previousPage: 'Anterior',
+      nextPage: 'Próxima',
       date: 'Data',
       time: 'Hora',
       addTransaction: 'Adicionar transação',

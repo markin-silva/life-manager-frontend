@@ -8,6 +8,7 @@ import TextInput from '../components/TextInput';
 import Button from '../components/Button';
 import Alert from '../components/Alert';
 import { useLocale } from '../contexts/LocaleContext';
+import { getLoadingLabel } from '../utils/loadingLabels';
 
 export default function SignUp() {
   const { t } = useLocale();
@@ -96,7 +97,7 @@ export default function SignUp() {
         />
 
         <Button type="submit" disabled={isLoading} fullWidth>
-          {isLoading ? t('transactions.saving') : t('auth.createAccountButton')}
+          {isLoading ? getLoadingLabel(t, 'signUp') : t('auth.createAccountButton')}
         </Button>
 
         <p className="text-sm font-light text-gray-500 dark:text-gray-400">

@@ -8,6 +8,7 @@ import TextInput from '../components/TextInput';
 import Button from '../components/Button';
 import Alert from '../components/Alert';
 import { useLocale } from '../contexts/LocaleContext';
+import { getLoadingLabel } from '../utils/loadingLabels';
 
 export default function Login() {
   const { t } = useLocale();
@@ -74,7 +75,7 @@ export default function Login() {
         />
 
         <Button type="submit" disabled={isLoading} fullWidth>
-          {isLoading ? t('transactions.saving') : t('auth.signIn')}
+          {isLoading ? getLoadingLabel(t, 'signIn') : t('auth.signIn')}
         </Button>
 
         <p className="text-sm font-light text-gray-500 dark:text-gray-400">

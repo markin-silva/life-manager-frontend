@@ -4,9 +4,11 @@ export type TransactionKind = 'expense' | 'income';
 
 export interface Transaction {
   id: string;
-  amount: number;
+  amount: number | string;
+  currency?: string;
   kind: TransactionKind;
   description: string;
+  paid?: boolean;
   category: Category | null;
   occurred_at: string;
   created_at: string;
@@ -15,6 +17,7 @@ export interface Transaction {
 
 export interface TransactionCreateRequest {
   amount: number;
+  currency?: string;
   kind: TransactionKind;
   description: string;
   category_id: string | null;
@@ -22,3 +25,9 @@ export interface TransactionCreateRequest {
 }
 
 export type TransactionUpdateRequest = Partial<TransactionCreateRequest>;
+
+export type TransactionPaginationMeta = {
+  current_page: number;
+  total_count: number;
+  per_page: number;
+};

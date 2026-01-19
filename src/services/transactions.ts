@@ -5,6 +5,7 @@ import type {
   Transaction,
   TransactionCreateRequest,
   TransactionUpdateRequest,
+  TransactionPaginationMeta,
 } from '../types/transactions';
 
 const ensureSuccess = <T>(response: ApiResponse<T>): T => getDataOrThrow(response);
@@ -29,14 +30,20 @@ const unwrapItem = (data: Transaction | { transaction: Transaction }): Transacti
   return data;
 };
 
+type PaginatedMeta = TransactionPaginationMeta;
+
 export const transactionsService = {
-  async list(): Promise<Transaction[]> {
+  async list(page = 1, perPage = 30): Promise<{ transactions: Transaction[]; meta?: PaginatedMeta }> {
     try {
-      const response = await apiClient.get<ApiResponse<Transaction[]>>(
+      const response = await apiClient.get<ApiResponse<Transaction[]> & { meta?: PaginatedMeta }>(
         '/api/v1/transactions',
+        { params: { page, per_page: perPage } },
       );
       const data = ensureSuccess(response.data);
-      return unwrapList(data as Transaction[] | { transactions: Transaction[] });
+      return {
+        transactions: unwrapList(data as Transaction[] | { transactions: Transaction[] }),
+        meta: response.data.meta,
+      };
     } catch (error) {
       throw new Error(getErrorMessage(error));
     }

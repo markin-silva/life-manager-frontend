@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, ReceiptText, Languages } from 'lucide-react';
 import { useLocale } from '../contexts/LocaleContext';
 
 const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-4 ${
+  `inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-4 ${
     isActive
       ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
@@ -27,9 +28,11 @@ export default function Header({ onLogout }: HeaderProps) {
 
         <nav className="flex flex-wrap items-center gap-2">
           <NavLink to="/dashboard" className={navLinkClasses}>
+            <LayoutDashboard className="h-4 w-4 text-gray-400" aria-hidden="true" />
             {t('common.dashboard')}
           </NavLink>
           <NavLink to="/transactions" className={navLinkClasses}>
+            <ReceiptText className="h-4 w-4 text-gray-400" aria-hidden="true" />
             {t('common.transactions')}
           </NavLink>
         </nav>
@@ -38,15 +41,18 @@ export default function Header({ onLogout }: HeaderProps) {
           <label className="sr-only" htmlFor="locale">
             Language
           </label>
-          <select
-            id="locale"
-            value={locale}
-            onChange={(event) => setLocale(event.target.value as 'en' | 'pt-BR')}
-            className="rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm focus:outline-none focus:ring-4 focus:ring-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:ring-primary-800"
-          >
-            <option value="en">EN</option>
-            <option value="pt-BR">PT-BR</option>
-          </select>
+          <div className="relative">
+            <Languages className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+            <select
+              id="locale"
+              value={locale}
+              onChange={(event) => setLocale(event.target.value as 'en' | 'pt-BR')}
+              className="h-9 rounded-lg border border-gray-200 bg-white py-1 pl-8 pr-2 text-xs text-gray-700 shadow-sm focus:outline-none focus:ring-4 focus:ring-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:ring-primary-800"
+            >
+              <option value="en">EN</option>
+              <option value="pt-BR">PT-BR</option>
+            </select>
+          </div>
 
           <button
             type="button"

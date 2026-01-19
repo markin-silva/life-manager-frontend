@@ -15,8 +15,9 @@ import { getErrorMessage, normalizeEmptyStrings } from '../services/apiResponse'
 import Modal from '../components/Modal';
 import CategoryBadge from '../components/CategoryBadge';
 import CategorySelect from '../components/CategorySelect';
+import IconButton from '../components/IconButton';
+import TransactionListSkeleton from '../components/TransactionListSkeleton';
 import {
-  Clock,
   Pencil,
   Plus,
   ReceiptText,
@@ -36,6 +37,9 @@ import {
 } from 'lucide-react';
 import { categoriesService } from '../services/categories';
 import type { CategoryCreateRequest } from '../types/categories';
+import { usePagination } from '../hooks/usePagination';
+import { createDateTimeFormatter } from '../utils/formatters';
+import { getLoadingLabel } from '../utils/loadingLabels';
 
 type TransactionFormValues = Omit<TransactionCreateRequest, 'occurred_at'> & {
   occurred_date: string;
@@ -59,6 +63,14 @@ const iconOptions = [
   { key: 'other', Icon: Tag },
 ];
 
+const currencyOptions = [
+  { value: 'BRL', label: 'BRL' },
+  { value: 'USD', label: 'USD' },
+  { value: 'EUR', label: 'EUR' },
+];
+
+const DEFAULT_PER_PAGE = 30;
+
 const defaultOccurredAt = () => {
   const now = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -69,9 +81,8 @@ const defaultOccurredAt = () => {
 };
 
 export default function Transactions() {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const navigate = useNavigate();
-  const hasFetched = useRef(false);
   const hasFetchedCategories = useRef(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -87,6 +98,7 @@ export default function Transactions() {
   const [isCategorySaving, setIsCategorySaving] = useState(false);
   const [categoryFormError, setCategoryFormError] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState('BRL');
 
   const {
     register,
@@ -127,17 +139,28 @@ export default function Transactions() {
 
   const formValues = watch();
 
-  useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
+  const {
+    page,
+    perPage,
+    setPage,
+    setMeta,
+    adjustTotalCount,
+    totalCount,
+    totalPages,
+    canGoPrev,
+    canGoNext,
+    visiblePages,
+  } = usePagination({ defaultPerPage: DEFAULT_PER_PAGE, windowSize: 5 });
 
+  useEffect(() => {
     const fetchTransactions = async () => {
       setIsLoading(true);
       setListError(null);
 
       try {
-        const data = await transactionsService.list();
-        setTransactions(data);
+        const response = await transactionsService.list(page, perPage);
+        setTransactions(response.transactions);
+        setMeta(response.meta ?? null);
       } catch (err) {
         setListError(getErrorMessage(err));
       } finally {
@@ -146,7 +169,7 @@ export default function Transactions() {
     };
 
     fetchTransactions();
-  }, []);
+  }, [page, perPage, setMeta]);
 
   useEffect(() => {
     if (hasFetchedCategories.current) return;
@@ -177,11 +200,13 @@ export default function Transactions() {
       const payload: TransactionCreateRequest = normalizeEmptyStrings({
         ...data,
         amount: Number(data.amount),
+        currency: selectedCurrency,
         occurred_at: occurredAt,
       });
 
       const result = await transactionsService.create(payload);
       setTransactions((prev) => [result.transaction, ...prev]);
+      adjustTotalCount(1);
       const message = result.message || 'Transaction created successfully';
       setSuccessMessage(message);
       setIsModalOpen(false);
@@ -207,6 +232,7 @@ export default function Transactions() {
     try {
       await transactionsService.remove(id);
       setTransactions((prev) => prev.filter((item) => item.id !== id));
+      adjustTotalCount(-1);
     } catch (err) {
       setFormError(getErrorMessage(err));
     }
@@ -220,12 +246,8 @@ export default function Transactions() {
     });
   }, []);
 
-  const formatDateTime = useMemo(() => {
-    return new Intl.DateTimeFormat(navigator.language, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
-  }, []);
+  const formatDateTime = useMemo(() => createDateTimeFormatter(locale), [locale]);
+
 
   const getCategoryLabel = useCallback((category: Category) => {
     if (category.system) {
@@ -328,22 +350,17 @@ export default function Transactions() {
         )}
 
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-gray-900 dark:text-white">
-              <Clock className="h-5 w-5 text-gray-500 dark:text-gray-400" aria-hidden="true" />
-              <h2 className="text-lg font-semibold">
-                {t('transactions.recentActivity')}
-              </h2>
-            </div>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {transactions.length} {t('common.items')}
-            </span>
+
+          <div className="hidden sm:grid grid-cols-[140px_1.4fr_200px_120px_60px] gap-4 border-b border-gray-200 pb-3 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <span>{t('transactions.date')}</span>
+            <span>{t('transactions.description')}</span>
+            <span>{t('transactions.category')}</span>
+            <span className="text-right">{t('transactions.amount')}</span>
+            <span className="text-right">{t('transactions.actions')}</span>
           </div>
 
           {isLoading ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('common.loading')}
-            </p>
+            <TransactionListSkeleton />
           ) : listError ? (
             <p className="text-sm text-red-600 dark:text-red-300">
               {listError}
@@ -355,40 +372,86 @@ export default function Transactions() {
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {transactions.map((transaction) => (
-                <div key={transaction.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  key={transaction.id}
+                  className="grid gap-3 py-4 text-sm sm:grid-cols-[140px_1.4fr_200px_120px_60px] sm:items-center"
+                >
+                  <div className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
+                    {formatDateTime.format(new Date(transaction.occurred_at))}
+                  </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {transaction.description || 'Untitled'}
                     </p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                      <CategoryBadge
-                        category={transaction.category}
-                        label={transaction.category
-                          ? getCategoryLabel(transaction.category)
-                          : t('transactions.uncategorized')}
-                      />
-                      <span className="text-gray-300 dark:text-gray-600">•</span>
-                      <span>{formatDateTime.format(new Date(transaction.occurred_at))}</span>
-                    </div>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div>
+                    <CategoryBadge
+                      category={transaction.category}
+                      label={transaction.category
+                        ? getCategoryLabel(transaction.category)
+                        : t('transactions.uncategorized')}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div className="text-right font-semibold">
                     <span className={transaction.kind === 'income' ? 'text-emerald-500' : 'text-red-500'}>
                       {transaction.kind === 'income' ? '+' : '-'}
                       {formatMoney.format(Math.abs(Number(transaction.amount)))}
                     </span>
-                    <Button
+                  </div>
+                  <div className="flex justify-end">
+                    <IconButton
                       type="button"
-                      variant="ghost"
-                      className="text-xs"
+                      variant="destructive"
                       onClick={() => handleDelete(transaction.id)}
+                      aria-label={t('transactions.deleteTransactionTooltip')}
+                      title={t('transactions.deleteTransactionTooltip')}
                     >
-                      {t('common.delete')}
-                    </Button>
+                      <Trash2 className="h-4 w-4" />
+                    </IconButton>
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-3 text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
+            <span>
+              {t('transactions.pageLabel')} {page} {t('transactions.pageOf')} {totalPages} • {totalCount} {t('common.items')}
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="px-3 py-1 text-xs"
+                disabled={isLoading || !canGoPrev}
+                onClick={() => setPage(page - 1)}
+              >
+                {t('transactions.previousPage')}
+              </Button>
+              {visiblePages.map((pageNumber) => (
+                <Button
+                  key={pageNumber}
+                  type="button"
+                  variant={pageNumber === page ? 'primary' : 'outline'}
+                  className="px-3 py-1 text-xs"
+                  disabled={isLoading || totalPages === 1 || pageNumber === page}
+                  onClick={() => setPage(pageNumber)}
+                >
+                  {pageNumber}
+                </Button>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                className="px-3 py-1 text-xs"
+                disabled={isLoading || !canGoNext}
+                onClick={() => setPage(page + 1)}
+              >
+                {t('transactions.nextPage')}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -414,26 +477,35 @@ export default function Transactions() {
             </div>
           )}
 
-          <TextInput
-            id="amount"
-            type="number"
-            step="0.01"
-            min="0"
-            label={t('transactions.amount')}
-            placeholder="0.00"
-            required
-            error={errors.amount?.message}
-            value={formValues.amount ?? ''}
-            {...register('amount', {
-              setValueAs: (value) => (value === '' ? undefined : Number(value)),
-              required: 'Amount is required',
-              min: { value: 0.01, message: 'Amount must be greater than 0' },
-              onChange: () => {
-                clearErrors('amount');
-                setFormError(null);
-              },
-            })}
-          />
+          <div className="grid gap-3 sm:grid-cols-[1fr_140px] sm:items-end">
+            <TextInput
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              label={t('transactions.amount')}
+              placeholder="0.00"
+              required
+              error={errors.amount?.message}
+              value={formValues.amount ?? ''}
+              {...register('amount', {
+                setValueAs: (value) => (value === '' ? undefined : Number(value)),
+                required: 'Amount is required',
+                min: { value: 0.01, message: 'Amount must be greater than 0' },
+                onChange: () => {
+                  clearErrors('amount');
+                  setFormError(null);
+                },
+              })}
+            />
+            <SelectInput
+              id="currency"
+              label={t('transactions.currency')}
+              options={currencyOptions}
+              value={selectedCurrency}
+              onChange={(event) => setSelectedCurrency(event.target.value)}
+            />
+          </div>
 
           <SelectInput
             id="kind"
@@ -516,7 +588,7 @@ export default function Transactions() {
           </div>
 
           <Button type="submit" disabled={isSubmitting} fullWidth>
-            {isSubmitting ? t('transactions.saving') : t('transactions.addTransaction')}
+            {isSubmitting ? getLoadingLabel(t, 'saveTransaction') : t('transactions.addTransaction')}
           </Button>
         </form>
       </Modal>
@@ -623,22 +695,23 @@ export default function Transactions() {
                     <>
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         className="px-3 py-1 text-xs"
                         onClick={() => openEditCategory(category)}
                       >
                         <Pencil className="mr-1 h-3 w-3" />
                         {t('transactions.editCategory')}
                       </Button>
-                      <Button
+                      <IconButton
                         type="button"
-                        variant="ghost"
-                        className="px-3 py-1 text-xs"
+                        variant="destructive"
+                        size="sm"
                         onClick={() => handleDeleteCategory(category)}
+                        aria-label={t('transactions.deleteCategoryTooltip')}
+                        title={t('transactions.deleteCategoryTooltip')}
                       >
-                        <Trash2 className="mr-1 h-3 w-3" />
-                        {t('transactions.deleteCategory')}
-                      </Button>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </IconButton>
                     </>
                   )}
                 </div>
