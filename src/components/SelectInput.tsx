@@ -25,6 +25,10 @@ export default function SelectInput({
   const baseClasses =
     'block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-600 focus:ring-primary-600 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:focus:border-primary-500 dark:focus:ring-primary-500';
 
+  const borderClasses = error
+    ? 'border-red-300 dark:border-red-500'
+    : 'border-gray-300 dark:border-gray-600';
+
   const errorMessages = Array.isArray(error) ? error : error ? [error] : [];
 
   return (
@@ -36,7 +40,7 @@ export default function SelectInput({
         {label}
         {required && <span className="ml-1 text-red-500">*</span>}
       </label>
-      <select id={id} {...props} className={`${baseClasses} ${className}`}>
+      <select id={id} {...props} className={`${baseClasses} ${borderClasses} ${className}`}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

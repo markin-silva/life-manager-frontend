@@ -6,6 +6,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 1.7.1
+
+### Changed
+
+- Pagination active page uses neutral styling to avoid competing with CTAs.
+- Transaction empty state refined with a structured, subtle container.
+- Category selection enforces explicit choice with uncategorized option.
+- Category dropdown actions remain accessible with internal scroll and fixed footer actions.
+- Transaction modal resets state on open and refines Category/Date/Time layout.
+- Amount input uses inline currency selector with locale formatting.
+- Transaction amounts display using backend currency and locale formatting.
+- Validation messages localized to the active locale.
+- Toast feedback added for transaction creation/deletion success/error.
+
+### 1.7.0
+
+### Added
+
+- Pagination hook with URL sync (page, per_page) and metadata handling.
+- Transaction list skeleton loader and shared list skeleton component.
+- Icon-only button component for contextual actions.
+- Loading label helper and locale-aware date/time formatter utilities.
+- Currency selector in the transaction creation modal.
+
+### Changed
+
+- Transactions list layout with dedicated columns, delete icon action, and footer pagination.
+- Button variants refactored to semantic intent (primary, secondary, outline, ghost, destructive).
+
 ### 1.6.0
 
 ### Added

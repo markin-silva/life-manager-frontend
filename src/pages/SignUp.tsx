@@ -58,10 +58,10 @@ export default function SignUp() {
           required
           error={errors.email?.message}
           {...register('email', {
-            required: 'Email is required',
+            required: t('auth.emailRequired'),
             pattern: {
               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: 'Invalid email address',
+              message: t('auth.emailInvalid'),
             },
           })}
         />
@@ -74,10 +74,10 @@ export default function SignUp() {
           required
           error={errors.password?.message}
           {...register('password', {
-            required: 'Password is required',
+            required: t('auth.passwordRequired'),
             minLength: {
               value: 6,
-              message: 'Password must be at least 6 characters',
+              message: t('auth.passwordMinLength'),
             },
           })}
         />
@@ -90,9 +90,9 @@ export default function SignUp() {
           required
           error={errors.password_confirmation?.message}
           {...register('password_confirmation', {
-            required: 'Password confirmation is required',
+            required: t('auth.passwordConfirmRequired'),
             validate: (value) =>
-              value === password || 'Passwords do not match',
+              value === password || t('auth.passwordsDoNotMatch'),
           })}
         />
 

@@ -32,7 +32,7 @@ export default function IconButton({
   return (
     <button
       {...props}
-      className={`inline-flex items-center justify-center rounded-lg transition focus:outline-none focus:ring-4 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
+      className={`inline-flex cursor-pointer items-center justify-center rounded-lg transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-60 ${sizeClasses[size]} ${variantClasses[variant]} ${className}`}
     >
       {children}
     </button>

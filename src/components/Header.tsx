@@ -3,7 +3,7 @@ import { LayoutDashboard, ReceiptText, Languages } from 'lucide-react';
 import { useLocale } from '../contexts/LocaleContext';
 
 const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-  `inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-4 ${
+  `inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-4 ${
     isActive
       ? 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white'
       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white'
@@ -47,7 +47,7 @@ export default function Header({ onLogout }: HeaderProps) {
               id="locale"
               value={locale}
               onChange={(event) => setLocale(event.target.value as 'en' | 'pt-BR')}
-              className="h-9 rounded-lg border border-gray-200 bg-white py-1 pl-8 pr-2 text-xs text-gray-700 shadow-sm focus:outline-none focus:ring-4 focus:ring-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:ring-primary-800"
+              className="h-9 cursor-pointer rounded-lg border border-gray-200 bg-white py-1 pl-8 pr-2 text-xs text-gray-700 shadow-sm focus:outline-none focus:ring-4 focus:ring-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:focus:ring-primary-800"
             >
               <option value="en">EN</option>
               <option value="pt-BR">PT-BR</option>
@@ -59,7 +59,7 @@ export default function Header({ onLogout }: HeaderProps) {
             onClick={onLogout}
             title={t('common.logout')}
             aria-label={t('common.logout')}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-4 focus:ring-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-primary-800"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus:ring-4 focus:ring-primary-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-primary-800"
           >
             <svg
               aria-hidden="true"

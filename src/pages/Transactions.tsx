@@ -41,7 +41,8 @@ import { usePagination } from '../hooks/usePagination';
 import { createDateTimeFormatter } from '../utils/formatters';
 import { getLoadingLabel } from '../utils/loadingLabels';
 
-type TransactionFormValues = Omit<TransactionCreateRequest, 'occurred_at'> & {
+type TransactionFormValues = Omit<TransactionCreateRequest, 'occurred_at' | 'amount'> & {
+  amount: string;
   occurred_date: string;
   occurred_time: string;
 };
@@ -70,6 +71,7 @@ const currencyOptions = [
 ];
 
 const DEFAULT_PER_PAGE = 30;
+const UNCATEGORIZED_VALUE = 'uncategorized';
 
 const defaultOccurredAt = () => {
   const now = new Date();
@@ -78,6 +80,13 @@ const defaultOccurredAt = () => {
     date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
     time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
   };
+};
+
+const parseAmountFromDigits = (digits: string) => {
+  if (!digits) return null;
+  const parsed = Number(digits);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed / 100;
 };
 
 export default function Transactions() {
@@ -90,7 +99,7 @@ export default function Transactions() {
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCategoryCreateOpen, setIsCategoryCreateOpen] = useState(false);
@@ -99,6 +108,7 @@ export default function Transactions() {
   const [categoryFormError, setCategoryFormError] = useState<string | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedCurrency, setSelectedCurrency] = useState('BRL');
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     register,
@@ -110,7 +120,7 @@ export default function Transactions() {
     formState: { errors },
   } = useForm<TransactionFormValues>({
     defaultValues: {
-      amount: undefined,
+      amount: '',
       kind: 'expense',
       description: '',
       category_id: '',
@@ -191,29 +201,81 @@ export default function Transactions() {
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const nextOccurred = defaultOccurredAt();
+    setFormError(null);
+    reset({
+      amount: '',
+      kind: 'expense',
+      description: '',
+      category_id: '',
+      occurred_date: nextOccurred.date,
+      occurred_time: nextOccurred.time,
+    });
+    setSelectedCurrency('BRL');
+  }, [isModalOpen, reset]);
+
+  useEffect(() => {
+    if (!isCategoryCreateOpen) return;
+    setCategoryFormError(null);
+    if (editingCategory) {
+      resetCategory({
+        name: editingCategory.name,
+        color: editingCategory.color,
+        icon: editingCategory.icon,
+      });
+      return;
+    }
+    resetCategory({ name: '', color: colorOptions[0], icon: iconOptions[0].key });
+  }, [editingCategory, isCategoryCreateOpen, resetCategory]);
+
+  useEffect(() => {
+    if (!isCategoryManageOpen) return;
+    setCategoryFormError(null);
+  }, [isCategoryManageOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeout.current) {
+        clearTimeout(toastTimeout.current);
+      }
+    };
+  }, []);
+
+  const showToast = useCallback((message: string, variant: 'success' | 'error' = 'success') => {
+    if (toastTimeout.current) {
+      clearTimeout(toastTimeout.current);
+    }
+    setToast({ message, variant });
+    toastTimeout.current = setTimeout(() => setToast(null), 3000);
+  }, []);
+
   const onSubmit = async (data: TransactionFormValues) => {
     setIsSubmitting(true);
     setFormError(null);
 
     try {
       const occurredAt = new Date(`${data.occurred_date}T${data.occurred_time}`).toISOString();
+      const normalizedCategoryId = data.category_id === UNCATEGORIZED_VALUE ? null : data.category_id;
+      const parsedAmount = parseAmountFromDigits(data.amount);
       const payload: TransactionCreateRequest = normalizeEmptyStrings({
         ...data,
-        amount: Number(data.amount),
+        amount: parsedAmount ?? 0,
         currency: selectedCurrency,
+        category_id: normalizedCategoryId,
         occurred_at: occurredAt,
       });
 
       const result = await transactionsService.create(payload);
       setTransactions((prev) => [result.transaction, ...prev]);
       adjustTotalCount(1);
-      const message = result.message || 'Transaction created successfully';
-      setSuccessMessage(message);
+      const message = result.message || t('transactions.createSuccess');
+      showToast(message, 'success');
       setIsModalOpen(false);
-      setTimeout(() => setSuccessMessage(null), 3000);
       const nextOccurred = defaultOccurredAt();
       reset({
-        amount: undefined,
+        amount: '',
         kind: data.kind,
         description: '',
         category_id: data.category_id || '',
@@ -233,18 +295,32 @@ export default function Transactions() {
       await transactionsService.remove(id);
       setTransactions((prev) => prev.filter((item) => item.id !== id));
       adjustTotalCount(-1);
+      showToast(t('transactions.deleteSuccess'), 'success');
     } catch (err) {
-      setFormError(getErrorMessage(err));
+      showToast(getErrorMessage(err) || t('transactions.deleteError'), 'error');
     }
   };
 
-  const formatMoney = useMemo(() => {
-    return new Intl.NumberFormat('en-US', {
+  const formatTransactionAmount = useCallback(
+    (amount: number, currency: string) => {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount);
+    },
+    [locale],
+  );
+
+  const amountFormatter = useMemo(() => {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: selectedCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-      useGrouping: true,
     });
-  }, []);
+  }, [locale, selectedCurrency]);
 
   const formatDateTime = useMemo(() => createDateTimeFormatter(locale), [locale]);
 
@@ -319,7 +395,7 @@ export default function Transactions() {
   };
 
   return (
-    <section className="bg-gray-50 font-sans dark:bg-gray-900">
+    <section className="min-h-screen bg-gray-50 font-sans dark:bg-gray-900">
       <Header onLogout={handleLogout} />
 
       <div className="mx-auto flex min-h-[calc(100vh-64px)] w-full max-w-6xl flex-col gap-5 px-6 py-10">
@@ -345,8 +421,10 @@ export default function Transactions() {
           </div>
         </header>
 
-        {successMessage && (
-          <Toast onClose={() => setSuccessMessage(null)}>{successMessage}</Toast>
+        {toast && (
+          <Toast variant={toast.variant} onClose={() => setToast(null)}>
+            {toast.message}
+          </Toast>
         )}
 
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow dark:border-gray-700 dark:bg-gray-800">
@@ -366,9 +444,10 @@ export default function Transactions() {
               {listError}
             </p>
           ) : transactions.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {t('transactions.noTransactions')}
-            </p>
+            <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-6 py-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-400">
+              <ReceiptText className="h-5 w-5 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+              <p>{t('transactions.noTransactions')}</p>
+            </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {transactions.map((transaction) => (
@@ -396,7 +475,10 @@ export default function Transactions() {
                   <div className="text-right font-semibold">
                     <span className={transaction.kind === 'income' ? 'text-emerald-500' : 'text-red-500'}>
                       {transaction.kind === 'income' ? '+' : '-'}
-                      {formatMoney.format(Math.abs(Number(transaction.amount)))}
+                      {formatTransactionAmount(
+                        Math.abs(Number(transaction.amount)),
+                        transaction.currency || 'BRL',
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-end">
@@ -433,8 +515,12 @@ export default function Transactions() {
                 <Button
                   key={pageNumber}
                   type="button"
-                  variant={pageNumber === page ? 'primary' : 'outline'}
-                  className="px-3 py-1 text-xs"
+                  variant="outline"
+                  className={`px-3 py-1 text-xs ${
+                    pageNumber === page
+                      ? 'border-gray-300 bg-gray-200 text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white'
+                      : ''
+                  }`}
                   disabled={isLoading || totalPages === 1 || pageNumber === page}
                   onClick={() => setPage(pageNumber)}
                 >
@@ -477,34 +563,65 @@ export default function Transactions() {
             </div>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-[1fr_140px] sm:items-end">
-            <TextInput
-              id="amount"
-              type="number"
-              step="0.01"
-              min="0"
-              label={t('transactions.amount')}
-              placeholder="0.00"
-              required
-              error={errors.amount?.message}
-              value={formValues.amount ?? ''}
-              {...register('amount', {
-                setValueAs: (value) => (value === '' ? undefined : Number(value)),
-                required: 'Amount is required',
-                min: { value: 0.01, message: 'Amount must be greater than 0' },
-                onChange: () => {
-                  clearErrors('amount');
-                  setFormError(null);
-                },
-              })}
-            />
-            <SelectInput
-              id="currency"
-              label={t('transactions.currency')}
-              options={currencyOptions}
-              value={selectedCurrency}
-              onChange={(event) => setSelectedCurrency(event.target.value)}
-            />
+          <div className="grid sm:grid-cols-[2fr_1fr_1fr] sm:items-end">
+            <label
+              htmlFor="amount"
+              className="mb-1.5 block text-sm font-medium text-gray-900 dark:text-white sm:col-span-3"
+            >
+              {t('transactions.amount')}
+              <span className="ml-1 text-red-500">*</span>
+            </label>
+            <div className={`flex items-center rounded-lg border bg-gray-50 px-3 py-2.5 text-sm text-gray-900 transition focus-within:ring-4 dark:bg-gray-700 dark:text-white sm:col-span-3 ${
+              errors.amount
+                ? 'border-red-300 focus-within:ring-red-200 dark:border-red-500 dark:focus-within:ring-red-900/40'
+                : 'border-gray-300 focus-within:ring-primary-200 dark:border-gray-600 dark:focus-within:ring-primary-800'
+            }`}>
+              <input
+                id="amount"
+                type="text"
+                inputMode="numeric"
+                pattern="\d*"
+                placeholder={amountFormatter.format(0)}
+                className="w-full bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-white dark:placeholder:text-gray-400"
+                value={formValues.amount
+                  ? amountFormatter.format((Number(formValues.amount) || 0) / 100)
+                  : ''}
+                {...register('amount', {
+                  required: t('transactions.amountRequired'),
+                  validate: (value) => {
+                    const parsed = parseAmountFromDigits(value);
+                    if (parsed === null) return t('transactions.amountRequired');
+                    if (parsed <= 0) return t('transactions.amountMin');
+                    return true;
+                  },
+                  onChange: (event) => {
+                    const digits = (event.target.value as string).replace(/\D/g, '');
+                    setValue('amount', digits, { shouldValidate: true });
+                    clearErrors('amount');
+                    setFormError(null);
+                  },
+                })}
+              />
+              <div className="mx-3 h-5 w-px bg-gray-200 dark:bg-gray-600" aria-hidden="true" />
+              <select
+                id="currency"
+                value={selectedCurrency}
+                onChange={(event) => setSelectedCurrency(event.target.value)}
+                className="cursor-pointer bg-transparent text-xs font-semibold uppercase text-gray-500 outline-none dark:text-gray-300"
+                aria-label={t('transactions.currency')}
+              >
+                {currencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {errors.amount?.message && (
+              <div className="mt-1 space-y-1 sm:col-span-3">
+                <p className="text-xs text-red-500">{errors.amount.message}</p>
+              </div>
+            )}
           </div>
 
           <SelectInput
@@ -533,17 +650,27 @@ export default function Transactions() {
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-900 dark:text-white">
               {t('transactions.category')}
+              <span className="ml-1 text-red-500">*</span>
             </label>
-            <input type="hidden" {...register('category_id')} />
+            <input
+              type="hidden"
+              {...register('category_id', {
+                required: t('transactions.categoryRequired'),
+              })}
+            />
             <CategorySelect
+              id="category_id"
               categories={categories}
               value={selectedCategoryId}
               placeholder={isCategoriesLoading ? t('common.loading') : t('transactions.categoryPlaceholder')}
               uncategorizedLabel={t('transactions.uncategorized')}
+              uncategorizedValue={UNCATEGORIZED_VALUE}
               createLabel={t('transactions.createCategory')}
               manageLabel={t('transactions.manageCategories')}
               disabled={isCategoriesLoading}
               getLabel={getCategoryLabel}
+              required
+              error={errors.category_id?.message}
               onChange={(value) => {
                 setValue('category_id', value);
                 clearErrors('category_id');
@@ -563,7 +690,7 @@ export default function Transactions() {
               value={formValues.occurred_date ?? ''}
               error={errors.occurred_date?.message}
               {...register('occurred_date', {
-                required: 'Date is required',
+                required: t('transactions.dateRequired'),
                 onChange: () => {
                   clearErrors('occurred_date');
                   setFormError(null);
@@ -578,7 +705,7 @@ export default function Transactions() {
               value={formValues.occurred_time ?? ''}
               error={errors.occurred_time?.message}
               {...register('occurred_time', {
-                required: 'Time is required',
+                required: t('transactions.timeRequired'),
                 onChange: () => {
                   clearErrors('occurred_time');
                   setFormError(null);
@@ -612,7 +739,7 @@ export default function Transactions() {
             required
             error={categoryErrors.name?.message}
             {...registerCategory('name', {
-              required: 'Name is required',
+              required: t('transactions.categoryNameRequired'),
             })}
           />
 

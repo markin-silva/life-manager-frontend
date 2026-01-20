@@ -57,3 +57,5 @@ npm run lint     # ESLint
 - `access-token`: Token JWT
 - `client`: Client ID
 - `uid`: User email
+
+**Paginação (transações):** o frontend envia `page` e `per_page` na listagem e espera `meta` na resposta (`current_page`, `per_page`, `total_count`).

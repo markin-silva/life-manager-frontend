@@ -54,10 +54,10 @@ export default function Login() {
           required
           error={errors.email?.message}
           {...register('email', {
-            required: 'Email is required',
+            required: t('auth.emailRequired'),
             pattern: {
               value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: 'Invalid email address',
+              message: t('auth.emailInvalid'),
             },
           })}
         />
@@ -70,7 +70,7 @@ export default function Login() {
           required
           error={errors.password?.message}
           {...register('password', {
-            required: 'Password is required',
+            required: t('auth.passwordRequired'),
           })}
         />
 
